@@ -1,0 +1,59 @@
+notes
+
+Join Model Forms
+<%= form_for @appointment do |f| %>
+  <%= f.datetime_select :appointment_datetime %>
+  <%= f.collection_select :doctor, Doctor.all, :id, :name %>
+  <%= f.collection_select :patient, Patient.all, :id, :name %>
+  <%= f.submit %>
+<% end %>
+
+collection_check_boxes(object, method, collection, value_method, text_method)
+object       post
+method       category_ids
+collection   Category.all
+value_method :id           @what goes in value? value="1"
+text_method  name          @what is displayed?  name="post[category_ids][]"
+
+ HTML value="1" name="post[category_ids][]" id="post_category_ids_1"
+ strong params require :category_ids
+
+NESTED ATTRIBUTES ##############text field for new category
+##### problem. We're creating a new category each time, regardless of whether or not it exists
+###GOOD FOR NEW EVERYTIME
+ ###three people type in "Super Cute!" and we get three different categorie
+ ### see fix below
+
+ <%= f.fields_for :categories, post.categories.build do |categories_fields| %>
+  <%= categories_fields.text_field :name %>
+<% end %>
+
+strong params require ,"categories_attributes: [:name]",
+
+HTML name="post[categories_attributes][0][name]" id="post_categories_attributes_0_name
+
+when we do mass assignment, our Post model will call a method called
+  categories_attributes=. Let's add that method to our model
+  using the accepts_nested_attributes_for macro.
+  #######
+      class Post < ActiveRecord::Base
+        has_many :post_categories
+        has_many :categories, through: :post_categories
+        accepts_nested_attributes_for :categories  #<----------------
+      end
+
+###fix for multiple category
+#creating our own categories_attributes= method.
+#Now, we're only creating a new category if it doesn't already exist with the current name.
+      class Post < ActiveRecord::Base
+        has_many :post_categories
+        has_many :categories, through: :post_categories
+        accepts_nested_attributes_for :categories
+        
+        def categories_attributes=(category_attributes)
+          category_attributes.values.each do |category_attribute|
+            category = Category.find_or_create_by(category_attribute)
+            self.categories << category
+          end
+        end
+      end

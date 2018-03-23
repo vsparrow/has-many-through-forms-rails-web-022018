@@ -1,6 +1,8 @@
 class Post < ActiveRecord::Base
   has_many :post_categories
   has_many :categories, through: :post_categories
+  # accepts_nested_attributes_for :categories 
+  #if you keep above get errors of duplicated that is why we added method below
 
 
   def categories_attributes=(category_attributes)
